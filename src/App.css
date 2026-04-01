@@ -273,6 +273,29 @@ button.secondary {
   box-sizing: border-box;
 }
 
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.6rem;
+}
+
+.kpi-item {
+  border: 1px solid #e3e3e3;
+  border-radius: 8px;
+  padding: 0.65rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.kpi-item span {
+  font-size: 0.8rem;
+  color: #555555;
+}
+
+.kpi-item strong {
+  font-size: 1.1rem;
+}
+
 .component-header {
   display: flex;
   justify-content: space-between;

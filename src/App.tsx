@@ -8,6 +8,7 @@ import {
   type IngredientStatus,
 } from './db'
 import './App.css'
+import { DashboardReporting } from './components/DashboardReporting'
 import { OverheadsLabourManagement } from './components/OverheadsLabourManagement'
 import { RecipeManagement } from './components/RecipeManagement'
 import { toDisplayString, toStoredString } from './lib/domain'
@@ -488,6 +489,7 @@ function App() {
           </section>
           <RecipeManagement enabled={status === 'ready'} ingredients={ingredients} />
           <OverheadsLabourManagement enabled={status === 'ready'} />
+          <DashboardReporting enabled={status === 'ready'} />
         </>
       ) : null}
     </main>
