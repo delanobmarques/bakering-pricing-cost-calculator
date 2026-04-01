@@ -59,6 +59,17 @@ type Props = {
 
 const COMPONENTS: RecipeComponent[] = ['MASSA', 'RECHEIO', 'CALDA', 'OTHERS']
 
+const SIZE_TIME_REFERENCE: Record<number, number> = {
+  5: 1,
+  8: 1.5,
+  10: 2,
+  12: 2.5,
+  15: 3,
+  20: 3.5,
+  25: 4,
+  30: 4.5,
+}
+
 function nowIso(): string {
   return new Date().toISOString()
 }
@@ -190,6 +201,19 @@ export function RecipeManagement({ enabled, ingredients }: Props) {
     }
     return editorRecipe.variants.find((variant) => variant.id === selectedVariantId) ?? null
   }, [editorRecipe, selectedVariantId])
+
+  const suggestedTimeForActiveVariant = useMemo(() => {
+    if (!activeVariant) {
+      return null
+    }
+
+    const size = Number(activeVariant.cakeSizeCm)
+    if (!Number.isFinite(size)) {
+      return null
+    }
+
+    return SIZE_TIME_REFERENCE[size] ?? null
+  }, [activeVariant])
 
   const pricingPanel = useMemo(() => {
     if (!editorRecipe || !activeVariant) {
@@ -894,6 +918,23 @@ export function RecipeManagement({ enabled, ingredients }: Props) {
                         updateVariant(activeVariant.id, { timeHours: event.target.value })
                       }
                     />
+                    {suggestedTimeForActiveVariant !== null ? (
+                      <div className="meta">
+                        Suggested for {activeVariant.cakeSizeCm}cm: {suggestedTimeForActiveVariant}{' '}
+                        hours
+                        <button
+                          type="button"
+                          className="secondary"
+                          onClick={() =>
+                            updateVariant(activeVariant.id, {
+                              timeHours: String(suggestedTimeForActiveVariant),
+                            })
+                          }
+                        >
+                          Use suggestion
+                        </button>
+                      </div>
+                    ) : null}
                   </label>
 
                   <label>

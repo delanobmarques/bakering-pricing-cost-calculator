@@ -243,6 +243,36 @@ button.secondary {
   margin: 0;
 }
 
+.overhead-grid-wrap {
+  overflow-x: auto;
+  border: 1px solid #e3e3e3;
+  border-radius: 8px;
+}
+
+.overhead-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 920px;
+}
+
+.overhead-table th,
+.overhead-table td {
+  border-bottom: 1px solid #ececec;
+  padding: 0.35rem;
+  text-align: left;
+  font-size: 0.82rem;
+}
+
+.overhead-table th {
+  background: #f6f6f6;
+  font-weight: 700;
+}
+
+.overhead-table input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .component-header {
   display: flex;
   justify-content: space-between;

@@ -8,6 +8,7 @@ import {
   type IngredientStatus,
 } from './db'
 import './App.css'
+import { OverheadsLabourManagement } from './components/OverheadsLabourManagement'
 import { RecipeManagement } from './components/RecipeManagement'
 import { toDisplayString, toStoredString } from './lib/domain'
 import { ingredientFormSchema, type IngredientFormValues } from './lib/validation'
@@ -486,6 +487,7 @@ function App() {
             </article>
           </section>
           <RecipeManagement enabled={status === 'ready'} ingredients={ingredients} />
+          <OverheadsLabourManagement enabled={status === 'ready'} />
         </>
       ) : null}
     </main>
