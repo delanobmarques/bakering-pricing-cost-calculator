@@ -217,6 +217,32 @@ button.secondary {
   gap: 0.5rem;
 }
 
+.pricing-panel {
+  border: 1px solid #e3e3e3;
+  border-radius: 8px;
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.3rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.scaling-widget {
+  border-top: 1px solid #e3e3e3;
+  padding-top: 0.6rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.scaling-widget h4 {
+  margin: 0;
+}
+
 .component-header {
   display: flex;
   justify-content: space-between;

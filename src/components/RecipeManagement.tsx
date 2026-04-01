@@ -3,6 +3,7 @@ import {
   recipeLinesRepository,
   recipesRepository,
   recipeVariantsRepository,
+  settingsRepository,
   type IngredientRow,
   type RecipeComplexity,
   type RecipeComponent,
@@ -10,7 +11,12 @@ import {
   type RecipeRow,
   type RecipeVariantRow,
 } from '../db'
-import { toDisplayString } from '../lib/domain'
+import {
+  calculateBrigadeiroPricing,
+  calculateScaledCost,
+  calculateStandardPricing,
+  toDisplayString,
+} from '../lib/domain'
 import { Decimal } from '../lib/decimal'
 import { calculateLineCost } from '../lib/pricingEngine'
 
@@ -92,11 +98,13 @@ function normalizeLines(lines: DraftLine[]): DraftLine[] {
 
 export function RecipeManagement({ enabled, ingredients }: Props) {
   const [recipes, setRecipes] = useState<DraftRecipe[]>([])
+  const [settingsMap, setSettingsMap] = useState<Record<string, string>>({})
   const [expandedRecipeId, setExpandedRecipeId] = useState<string | null>(null)
   const [editorRecipe, setEditorRecipe] = useState<DraftRecipe | null>(null)
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
   const [copyFromVariantId, setCopyFromVariantId] = useState<string>('')
   const [newVariantSize, setNewVariantSize] = useState('')
+  const [newQuantityRequired, setNewQuantityRequired] = useState('1')
   const [recipeError, setRecipeError] = useState<string | null>(null)
 
   const ingredientById = useMemo(() => {
@@ -153,6 +161,13 @@ export function RecipeManagement({ enabled, ingredients }: Props) {
   const loadRecipes = useCallback(() => {
     const rows = recipesRepository.listAll()
     setRecipes(rows.map((row) => buildDraftFromDatabase(row)))
+    const allSettings = settingsRepository.listAll()
+    setSettingsMap(
+      allSettings.reduce<Record<string, string>>((acc, setting) => {
+        acc[setting.key] = setting.value
+        return acc
+      }, {}),
+    )
   }, [buildDraftFromDatabase])
 
   useEffect(() => {
@@ -175,6 +190,130 @@ export function RecipeManagement({ enabled, ingredients }: Props) {
     }
     return editorRecipe.variants.find((variant) => variant.id === selectedVariantId) ?? null
   }, [editorRecipe, selectedVariantId])
+
+  const pricingPanel = useMemo(() => {
+    if (!editorRecipe || !activeVariant) {
+      return null
+    }
+
+    const lineInputs = activeVariant.lines
+      .map((line) => {
+        const ingredient = ingredientById.get(line.ingredientId)
+        const amount = Number(line.amountGrams)
+        if (!ingredient || ingredient.price === null || !Number.isFinite(amount) || amount <= 0) {
+          return null
+        }
+
+        return {
+          amountGrams: amount,
+          price: ingredient.price,
+          sizeInGrams: ingredient.size_in_grams,
+        }
+      })
+      .filter((line): line is { amountGrams: number; price: number; sizeInGrams: number } =>
+        Boolean(line),
+      )
+
+    const fallbackByComplexity: Record<RecipeComplexity, string> = {
+      SIMPLE: settingsMap.hourly_rate_simple ?? '20',
+      MEDIUM: settingsMap.hourly_rate_medium ?? '25',
+      HARD: settingsMap.hourly_rate_hard ?? '30',
+    }
+
+    const resolveNumber = (rawValue: string, fallback: string): Decimal => {
+      const source = rawValue.trim().length > 0 ? rawValue : fallback
+      const value = Number(source)
+      return Number.isFinite(value) ? new Decimal(value) : new Decimal(fallback)
+    }
+
+    const hourlyRate = resolveNumber(
+      activeVariant.hourlyRate,
+      fallbackByComplexity[activeVariant.complexity],
+    )
+    const timeHours = resolveNumber(activeVariant.timeHours, '1.5')
+    const profitMargin = resolveNumber(
+      activeVariant.profitMargin,
+      settingsMap.profit_margin ?? '1.3',
+    )
+    const taxRate = resolveNumber(activeVariant.taxRate, settingsMap.tax_rate ?? '0.15')
+    const overheadRate = resolveNumber(
+      activeVariant.overheadRate,
+      settingsMap.overhead_rate ?? '0.05',
+    )
+
+    const quantityProduced = resolveNumber(activeVariant.quantityProduced, '1')
+    const requiredQuantity = resolveNumber(newQuantityRequired, '1')
+
+    if (editorRecipe.isBrigadeiro) {
+      const breakdown = calculateBrigadeiroPricing(lineInputs, {
+        hourlyRate,
+        taxRate,
+        profitMargin,
+        overheadRate,
+        timeHours,
+      })
+      const scaledCost = calculateScaledCost(
+        breakdown.ingredientCostWithTax,
+        quantityProduced,
+        requiredQuantity,
+      )
+      const subtotalBeforeProfit = breakdown.subtotalWithOverhead
+      const profitAmount = breakdown.priceWithProfit.minus(subtotalBeforeProfit)
+
+      return {
+        mode: 'brigadeiro' as const,
+        ingredients: breakdown.ingredientCostWithTax,
+        labour: breakdown.time15x,
+        overheads: breakdown.overheadCost,
+        profit: profitAmount,
+        tax: breakdown.taxOnProfit,
+        sellingPrice: breakdown.sellingPrice,
+        scaledCost,
+      }
+    }
+
+    const breakdown = calculateStandardPricing(lineInputs, {
+      hourlyRate,
+      taxRate,
+      profitMargin,
+      overheadRate,
+      timeHours,
+    })
+    const scaledCost = calculateScaledCost(
+      breakdown.ingredientCostWithTax,
+      quantityProduced,
+      requiredQuantity,
+    )
+
+    const subtotalBeforeProfit = breakdown.labourCost
+      .plus(breakdown.ingredientCostWithTax)
+      .plus(breakdown.overheadCost)
+    const subtotalWithProfit = subtotalBeforeProfit.mul(profitMargin)
+    const profitAmount = subtotalWithProfit.minus(subtotalBeforeProfit)
+    const taxAmount = subtotalWithProfit.mul(taxRate)
+
+    return {
+      mode: 'standard' as const,
+      ingredients: breakdown.ingredientCostWithTax,
+      labour: breakdown.labourCost,
+      overheads: breakdown.overheadCost,
+      profit: profitAmount,
+      tax: taxAmount,
+      sellingPrice: breakdown.sellingPrice,
+      scaledCost,
+    }
+  }, [
+    activeVariant,
+    editorRecipe,
+    ingredientById,
+    newQuantityRequired,
+    settingsMap.hourly_rate_hard,
+    settingsMap.hourly_rate_medium,
+    settingsMap.hourly_rate_simple,
+    settingsMap.overhead_rate,
+    settingsMap.profit_margin,
+    settingsMap.tax_rate,
+  ])
 
   const computeLineDisplayCost = (line: DraftLine): string => {
     const ingredient = ingredientById.get(line.ingredientId)
@@ -654,6 +793,58 @@ export function RecipeManagement({ enabled, ingredients }: Props) {
                   Remove Variant
                 </button>
               ) : null}
+            </div>
+
+            <div className="pricing-panel">
+              <h3>{editorRecipe.isBrigadeiro ? 'Brigadeiro Pricing' : 'Standard Pricing'}</h3>
+              {pricingPanel ? (
+                <>
+                  <div className="pricing-grid">
+                    <span>Ingredients</span>
+                    <strong>{toDisplayString(pricingPanel.ingredients)}</strong>
+                    <span>Labour</span>
+                    <strong>{toDisplayString(pricingPanel.labour)}</strong>
+                    <span>Overheads</span>
+                    <strong>{toDisplayString(pricingPanel.overheads)}</strong>
+                    <span>Profit</span>
+                    <strong>{toDisplayString(pricingPanel.profit)}</strong>
+                    <span>Tax</span>
+                    <strong>{toDisplayString(pricingPanel.tax)}</strong>
+                    <span>You charge</span>
+                    <strong>{toDisplayString(pricingPanel.sellingPrice)}</strong>
+                  </div>
+
+                  <div className="scaling-widget">
+                    <h4>Recipe Scaling</h4>
+                    <label>
+                      Base quantity produced
+                      <input
+                        value={activeVariant?.quantityProduced ?? ''}
+                        onChange={(event) =>
+                          activeVariant
+                            ? updateVariant(activeVariant.id, {
+                                quantityProduced: event.target.value,
+                              })
+                            : undefined
+                        }
+                      />
+                    </label>
+                    <label>
+                      New quantity required
+                      <input
+                        value={newQuantityRequired}
+                        onChange={(event) => setNewQuantityRequired(event.target.value)}
+                      />
+                    </label>
+                    <div>
+                      Scaled ingredient cost (with tax):{' '}
+                      <strong>{toDisplayString(pricingPanel.scaledCost)}</strong>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <p>Enter ingredient lines with valid amounts to see pricing.</p>
+              )}
             </div>
 
             {activeVariant ? (
