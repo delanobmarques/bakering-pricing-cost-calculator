@@ -1,11 +1,18 @@
 import sqlite3InitModule from '@sqlite.org/sqlite-wasm'
 import { migrations } from './migrations'
 
+type SqlValue = string | number | null
+
+type SqlExecArgs = {
+  sql: string
+  bind?: SqlValue[]
+  rowMode?: 'object'
+  returnValue?: 'resultRows'
+}
+
 type RawSqliteDb = {
-  exec: (
-    arg: string | { sql: string; bind?: unknown[]; rowMode?: string; returnValue?: string },
-  ) => unknown
-  selectValues: (sql: string, bind?: unknown[]) => Array<number | string>
+  exec: (arg: string | SqlExecArgs) => unknown
+  selectValues: (sql: string, bind?: SqlValue[]) => Array<number | string>
 }
 
 type RawSqlite3 = {
@@ -79,6 +86,42 @@ function applyMigrations(db: RawSqliteDb): number {
   }
 
   return migrations.length === 0 ? 0 : migrations[migrations.length - 1].version
+}
+
+export function execute(sql: string, bind: SqlValue[] = []): void {
+  if (!dbHandle) {
+    throw new Error('Database is not initialized. Call initializeDatabase() first.')
+  }
+
+  dbHandle.db.exec({ sql, bind })
+}
+
+export function queryRows<T>(sql: string, bind: SqlValue[] = []): T[] {
+  if (!dbHandle) {
+    throw new Error('Database is not initialized. Call initializeDatabase() first.')
+  }
+
+  const result = dbHandle.db.exec({
+    sql,
+    bind,
+    rowMode: 'object',
+    returnValue: 'resultRows',
+  })
+
+  return (result as T[]) ?? []
+}
+
+export function queryOne<T>(sql: string, bind: SqlValue[] = []): T | null {
+  const rows = queryRows<T>(sql, bind)
+  return rows[0] ?? null
+}
+
+export function getDatabaseHandle(): DatabaseHandle {
+  if (!dbHandle) {
+    throw new Error('Database is not initialized. Call initializeDatabase() first.')
+  }
+
+  return dbHandle
 }
 
 export async function initializeDatabase(): Promise<DatabaseHandle> {

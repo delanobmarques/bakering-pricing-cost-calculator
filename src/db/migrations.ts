@@ -99,4 +99,19 @@ export const migrations: Migration[] = [
       );`,
     ],
   },
+  {
+    version: 2,
+    name: 'seed_default_settings',
+    up: [
+      `INSERT OR IGNORE INTO settings (key, value) VALUES ('tax_rate', '0.15');`,
+      `INSERT OR IGNORE INTO settings (key, value) VALUES ('profit_margin', '1.3');`,
+      `INSERT OR IGNORE INTO settings (key, value) VALUES ('overhead_rate', '0.05');`,
+      `INSERT OR IGNORE INTO settings (key, value) VALUES ('hourly_rate_simple', '20');`,
+      `INSERT OR IGNORE INTO settings (key, value) VALUES ('hourly_rate_medium', '25');`,
+      `INSERT OR IGNORE INTO settings (key, value) VALUES ('hourly_rate_hard', '30');`,
+      `INSERT OR IGNORE INTO settings (key, value) VALUES ('avg_cakes_per_month', '1');`,
+      `INSERT OR IGNORE INTO settings (key, value) VALUES ('currency', 'CAD');`,
+      `INSERT OR IGNORE INTO settings (key, value) VALUES ('business_name', 'Made With Love by Cinthia');`,
+    ],
+  },
 ]
