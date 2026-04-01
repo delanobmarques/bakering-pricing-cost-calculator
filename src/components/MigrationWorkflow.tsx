@@ -75,7 +75,7 @@ export function MigrationWorkflow({ enabled, onDataChanged }: Props) {
 
   const runImport = async () => {
     if (!selectedFile) {
-      setImportError('Select a spreadsheet file first.')
+      setImportError('Choose your spreadsheet file first so we can start the migration together.')
       return
     }
 
@@ -90,7 +90,11 @@ export function MigrationWorkflow({ enabled, onDataChanged }: Props) {
       loadWorkflowState()
       onDataChanged()
     } catch (error) {
-      setImportError(error instanceof Error ? error.message : 'Failed to import spreadsheet.')
+      setImportError(
+        error instanceof Error
+          ? error.message
+          : 'We could not import that spreadsheet yet. Please try again in a moment.',
+      )
     } finally {
       setImporting(false)
     }
@@ -101,7 +105,7 @@ export function MigrationWorkflow({ enabled, onDataChanged }: Props) {
     const parsed = Number(rawValue)
 
     if (!Number.isFinite(parsed) || parsed <= 0) {
-      setWizardError('Enter a valid positive price before resolving an ingredient.')
+      setWizardError('This ingredient still needs a valid positive price before we can continue.')
       return
     }
 
@@ -115,7 +119,7 @@ export function MigrationWorkflow({ enabled, onDataChanged }: Props) {
   const completeMigration = () => {
     if (missingPriceUsages.length > 0) {
       setWizardError(
-        'Migration cannot complete while recipe-used ingredients are still MISSING PRICE.',
+        'Almost there - add prices to the remaining recipe ingredients to unlock migration completion.',
       )
       return
     }
@@ -131,8 +135,8 @@ export function MigrationWorkflow({ enabled, onDataChanged }: Props) {
       <article className="card">
         <h2>Data Migration Workflow</h2>
         <p>
-          Import your spreadsheet to migrate ingredients, recipes, and overhead data. Quindim is
-          excluded from auto-migration by design.
+          Bring in your spreadsheet and we will map ingredients, recipes, and overhead data for you.
+          Quindim stays manual by design so you can rebuild it cleanly.
         </p>
 
         <div className="toolbar">
@@ -142,7 +146,7 @@ export function MigrationWorkflow({ enabled, onDataChanged }: Props) {
             onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
           />
           <button type="button" onClick={() => void runImport()} disabled={importing}>
-            {importing ? 'Importing...' : 'Run Spreadsheet Import'}
+            {importing ? 'Importing your workbook...' : 'Start Spreadsheet Import'}
           </button>
         </div>
 
@@ -246,7 +250,7 @@ export function MigrationWorkflow({ enabled, onDataChanged }: Props) {
               disabled={missingPriceUsages.length > 0}
               onClick={completeMigration}
             >
-              Mark Migration Complete
+              Finish Migration
             </button>
           </div>
 
@@ -284,7 +288,7 @@ export function MigrationWorkflow({ enabled, onDataChanged }: Props) {
               ))}
             </div>
           ) : (
-            <p>No DOUBLE CHECK or UNVERIFIED ingredients detected.</p>
+            <p>Great news: no DOUBLE CHECK or UNVERIFIED ingredients were found.</p>
           )}
         </article>
       ) : null}

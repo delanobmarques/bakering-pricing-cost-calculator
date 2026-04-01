@@ -245,7 +245,11 @@ export function DashboardReporting({ enabled }: Props) {
       <article className="card">
         <h2>Recipe Pricing Summary</h2>
         <div className="list">
-          {recipes.length === 0 ? <p>No recipes available.</p> : null}
+          {recipes.length === 0 ? (
+            <p>
+              Your recipe list is still empty. Add your first recipe and let's price it together.
+            </p>
+          ) : null}
           {recipes.map((recipe) => (
             <div key={recipe.id} className="list-row">
               <div>

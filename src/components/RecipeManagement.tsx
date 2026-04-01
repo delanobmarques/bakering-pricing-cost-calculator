@@ -686,12 +686,14 @@ export function RecipeManagement({ enabled, ingredients }: Props) {
         <div className="recipe-list-header">
           <h2>Recipe List</h2>
           <button type="button" onClick={beginNewRecipe}>
-            New Recipe
+            Create New Recipe
           </button>
         </div>
 
         <div className="list">
-          {recipes.length === 0 ? <p>No recipes yet.</p> : null}
+          {recipes.length === 0 ? (
+            <p>You haven't created any recipes yet. Let's build your first one!</p>
+          ) : null}
           {recipes.map((recipe) => (
             <div key={recipe.id} className="list-row">
               <div>
@@ -700,7 +702,7 @@ export function RecipeManagement({ enabled, ingredients }: Props) {
                   <span
                     className={`status-pill ${recipe.isBrigadeiro ? 'status-check' : 'status-ok'}`}
                   >
-                    {recipe.isBrigadeiro ? 'Brigadeiro' : 'Standard'}
+                    {recipe.isBrigadeiro ? 'Brigadeiro mode' : 'Standard mode'}
                   </span>
                   <span>{recipe.variants.length} variant(s)</span>
                 </div>
@@ -729,10 +731,10 @@ export function RecipeManagement({ enabled, ingredients }: Props) {
                   {expandedRecipeId === recipe.id ? 'Collapse' : 'Expand'}
                 </button>
                 <button type="button" className="secondary" onClick={() => beginEditRecipe(recipe)}>
-                  Edit
+                  Edit Recipe
                 </button>
                 <button type="button" className="secondary" onClick={() => duplicateRecipe(recipe)}>
-                  Duplicate
+                  Duplicate Recipe
                 </button>
               </div>
             </div>
@@ -823,6 +825,17 @@ export function RecipeManagement({ enabled, ingredients }: Props) {
               <h3>{editorRecipe.isBrigadeiro ? 'Brigadeiro Pricing' : 'Standard Pricing'}</h3>
               {pricingPanel ? (
                 <>
+                  <div className="you-charge-card">
+                    {editorRecipe.isBrigadeiro ? (
+                      <span className="status-pill status-check">brigadeiro pricing</span>
+                    ) : null}
+                    <div className="you-charge-label">YOU CHARGE</div>
+                    <div className="you-charge-value">
+                      <span className="you-charge-currency">$</span>
+                      <span>{toDisplayString(pricingPanel.sellingPrice)}</span>
+                    </div>
+                  </div>
+
                   <div className="pricing-grid">
                     <span>Ingredients</span>
                     <strong>{toDisplayString(pricingPanel.ingredients)}</strong>
@@ -834,8 +847,6 @@ export function RecipeManagement({ enabled, ingredients }: Props) {
                     <strong>{toDisplayString(pricingPanel.profit)}</strong>
                     <span>Tax</span>
                     <strong>{toDisplayString(pricingPanel.tax)}</strong>
-                    <span>You charge</span>
-                    <strong>{toDisplayString(pricingPanel.sellingPrice)}</strong>
                   </div>
 
                   <div className="scaling-widget">
@@ -867,7 +878,10 @@ export function RecipeManagement({ enabled, ingredients }: Props) {
                   </div>
                 </>
               ) : (
-                <p>Enter ingredient lines with valid amounts to see pricing.</p>
+                <p>
+                  Almost there - add ingredients with valid amounts and your final price will show
+                  up here.
+                </p>
               )}
             </div>
 
