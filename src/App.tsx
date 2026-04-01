@@ -8,6 +8,7 @@ import {
   type IngredientStatus,
 } from './db'
 import './App.css'
+import { RecipeManagement } from './components/RecipeManagement'
 import { toDisplayString, toStoredString } from './lib/domain'
 import { ingredientFormSchema, type IngredientFormValues } from './lib/validation'
 import { calculateCostPerGram, toGrams } from './lib/unitConversion'
@@ -273,7 +274,7 @@ function App() {
 
   return (
     <main className="container">
-      <h1>Ingredient Management</h1>
+      <h1>Bakery Pricing & Cost Calculator</h1>
 
       {status === 'loading' ? <p>Initializing database...</p> : null}
       {status === 'error' ? (
@@ -298,181 +299,194 @@ function App() {
       ) : null}
 
       {status === 'ready' ? (
-        <section className="grid">
-          <article className="card">
-            <h2>{editingId ? 'Edit Ingredient' : 'Add Ingredient'}</h2>
-            <form onSubmit={handleSubmit(onSubmit)} className="form">
-              <label>
-                Name *
-                <input {...register('name')} />
-                {errors.name ? <span className="error-text">{errors.name.message}</span> : null}
-              </label>
-
-              <label>
-                Price (CAD) *
-                <input {...register('price')} placeholder="7.99" />
-                {errors.price ? <span className="error-text">{errors.price.message}</span> : null}
-              </label>
-
-              <label>
-                Package Size *
-                <input {...register('packageSize')} placeholder="500" />
-                {errors.packageSize ? (
-                  <span className="error-text">{errors.packageSize.message}</span>
-                ) : null}
-              </label>
-
-              <label>
-                Unit *
-                <select {...register('unit')}>
-                  <option value="KG">KG</option>
-                  <option value="G">G</option>
-                  <option value="L">L</option>
-                  <option value="ML">ML</option>
-                  <option value="UND">UND</option>
-                </select>
-                {errors.unit ? <span className="error-text">{errors.unit.message}</span> : null}
-              </label>
-
-              <label>
-                Density Factor (ML)
-                <input {...register('densityFactor')} placeholder="1.03" />
-                {errors.densityFactor ? (
-                  <span className="error-text">{errors.densityFactor.message}</span>
-                ) : null}
-              </label>
-
-              {watchedUnit === 'UND' ? (
+        <>
+          <section className="grid">
+            <article className="card">
+              <h2>Ingredient Management</h2>
+              <h3>{editingId ? 'Edit Ingredient' : 'Add Ingredient'}</h3>
+              <form onSubmit={handleSubmit(onSubmit)} className="form">
                 <label>
-                  Grams Per Unit *
-                  <input {...register('gramsPerUnit')} placeholder="50" />
-                  {errors.gramsPerUnit ? (
-                    <span className="error-text">{errors.gramsPerUnit.message}</span>
+                  Name *
+                  <input {...register('name')} />
+                  {errors.name ? <span className="error-text">{errors.name.message}</span> : null}
+                </label>
+
+                <label>
+                  Price (CAD) *
+                  <input {...register('price')} placeholder="7.99" />
+                  {errors.price ? <span className="error-text">{errors.price.message}</span> : null}
+                </label>
+
+                <label>
+                  Package Size *
+                  <input {...register('packageSize')} placeholder="500" />
+                  {errors.packageSize ? (
+                    <span className="error-text">{errors.packageSize.message}</span>
                   ) : null}
                 </label>
-              ) : null}
 
-              <label>
-                Status *
-                <select {...register('status')}>
+                <label>
+                  Unit *
+                  <select {...register('unit')}>
+                    <option value="KG">KG</option>
+                    <option value="G">G</option>
+                    <option value="L">L</option>
+                    <option value="ML">ML</option>
+                    <option value="UND">UND</option>
+                  </select>
+                  {errors.unit ? <span className="error-text">{errors.unit.message}</span> : null}
+                </label>
+
+                <label>
+                  Density Factor (ML)
+                  <input {...register('densityFactor')} placeholder="1.03" />
+                  {errors.densityFactor ? (
+                    <span className="error-text">{errors.densityFactor.message}</span>
+                  ) : null}
+                </label>
+
+                {watchedUnit === 'UND' ? (
+                  <label>
+                    Grams Per Unit *
+                    <input {...register('gramsPerUnit')} placeholder="50" />
+                    {errors.gramsPerUnit ? (
+                      <span className="error-text">{errors.gramsPerUnit.message}</span>
+                    ) : null}
+                  </label>
+                ) : null}
+
+                <label>
+                  Status *
+                  <select {...register('status')}>
+                    {STATUS_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label>
+                  Vendor
+                  <input {...register('vendor')} />
+                </label>
+
+                <label>
+                  Notes
+                  <textarea {...register('notes')} rows={3} />
+                </label>
+
+                {costPreview ? (
+                  <div className="calc-box">
+                    <div>
+                      size_in_grams: {costPreview.sizeInGramsStored} (display:{' '}
+                      {costPreview.sizeInGramsDisplay})
+                    </div>
+                    <div>
+                      cost_per_gram: {costPreview.costPerGramStored} (display:{' '}
+                      {costPreview.costPerGramDisplay})
+                    </div>
+                  </div>
+                ) : null}
+
+                {submitError ? <div className="error-text">{submitError}</div> : null}
+
+                <div className="actions">
+                  <button type="submit" disabled={isSubmitting}>
+                    {editingId ? 'Update' : 'Add'} Ingredient
+                  </button>
+                  {editingId ? (
+                    <button type="button" className="secondary" onClick={cancelEdit}>
+                      Cancel Edit
+                    </button>
+                  ) : null}
+                </div>
+              </form>
+            </article>
+
+            <article className="card">
+              <h2>Ingredient List</h2>
+              <div className="toolbar">
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search by name or vendor"
+                />
+                <select
+                  value={statusFilter}
+                  onChange={(event) =>
+                    setStatusFilter(event.target.value as IngredientStatus | 'ALL')
+                  }
+                >
+                  <option value="ALL">All statuses</option>
                   {STATUS_OPTIONS.map((option) => (
                     <option key={option} value={option}>
                       {option}
                     </option>
                   ))}
                 </select>
-              </label>
-
-              <label>
-                Vendor
-                <input {...register('vendor')} />
-              </label>
-
-              <label>
-                Notes
-                <textarea {...register('notes')} rows={3} />
-              </label>
-
-              {costPreview ? (
-                <div className="calc-box">
-                  <div>
-                    size_in_grams: {costPreview.sizeInGramsStored} (display:{' '}
-                    {costPreview.sizeInGramsDisplay})
-                  </div>
-                  <div>
-                    cost_per_gram: {costPreview.costPerGramStored} (display:{' '}
-                    {costPreview.costPerGramDisplay})
-                  </div>
-                </div>
-              ) : null}
-
-              {submitError ? <div className="error-text">{submitError}</div> : null}
-
-              <div className="actions">
-                <button type="submit" disabled={isSubmitting}>
-                  {editingId ? 'Update' : 'Add'} Ingredient
-                </button>
-                {editingId ? (
-                  <button type="button" className="secondary" onClick={cancelEdit}>
-                    Cancel Edit
-                  </button>
-                ) : null}
+                <select
+                  value={sortBy}
+                  onChange={(event) => setSortBy(event.target.value as SortBy)}
+                >
+                  <option value="name">Sort: Name</option>
+                  <option value="status">Sort: Status</option>
+                  <option value="vendor">Sort: Vendor</option>
+                  <option value="updated_at">Sort: Updated</option>
+                </select>
+                <select
+                  value={sortDirection}
+                  onChange={(event) => setSortDirection(event.target.value as 'ASC' | 'DESC')}
+                >
+                  <option value="ASC">ASC</option>
+                  <option value="DESC">DESC</option>
+                </select>
+                <label className="checkbox">
+                  <input
+                    type="checkbox"
+                    checked={includeArchived}
+                    onChange={(event) => setIncludeArchived(event.target.checked)}
+                  />
+                  Show archived
+                </label>
               </div>
-            </form>
-          </article>
 
-          <article className="card">
-            <h2>Ingredient List</h2>
-            <div className="toolbar">
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search by name or vendor"
-              />
-              <select
-                value={statusFilter}
-                onChange={(event) =>
-                  setStatusFilter(event.target.value as IngredientStatus | 'ALL')
-                }
-              >
-                <option value="ALL">All statuses</option>
-                {STATUS_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-              <select value={sortBy} onChange={(event) => setSortBy(event.target.value as SortBy)}>
-                <option value="name">Sort: Name</option>
-                <option value="status">Sort: Status</option>
-                <option value="vendor">Sort: Vendor</option>
-                <option value="updated_at">Sort: Updated</option>
-              </select>
-              <select
-                value={sortDirection}
-                onChange={(event) => setSortDirection(event.target.value as 'ASC' | 'DESC')}
-              >
-                <option value="ASC">ASC</option>
-                <option value="DESC">DESC</option>
-              </select>
-              <label className="checkbox">
-                <input
-                  type="checkbox"
-                  checked={includeArchived}
-                  onChange={(event) => setIncludeArchived(event.target.checked)}
-                />
-                Show archived
-              </label>
-            </div>
-
-            <div className="list">
-              {visibleIngredients.length === 0 ? <p>No ingredients found.</p> : null}
-              {visibleIngredients.map((row) => (
-                <div key={row.id} className="list-row">
-                  <div>
-                    <strong>{row.name}</strong>
-                    <div className="meta">
-                      <span className={`status-pill ${statusClass(row.status)}`}>{row.status}</span>
-                      <span>Unit: {row.unit}</span>
-                      <span>Price: {row.price ?? '-'} CAD</span>
-                      <span>size_in_grams: {row.size_in_grams}</span>
-                      <span>cost_per_gram: {row.cost_per_gram}</span>
-                      <span>{row.archived ? 'Archived' : 'Active'}</span>
+              <div className="list">
+                {visibleIngredients.length === 0 ? <p>No ingredients found.</p> : null}
+                {visibleIngredients.map((row) => (
+                  <div key={row.id} className="list-row">
+                    <div>
+                      <strong>{row.name}</strong>
+                      <div className="meta">
+                        <span className={`status-pill ${statusClass(row.status)}`}>
+                          {row.status}
+                        </span>
+                        <span>Unit: {row.unit}</span>
+                        <span>Price: {row.price ?? '-'} CAD</span>
+                        <span>size_in_grams: {row.size_in_grams}</span>
+                        <span>cost_per_gram: {row.cost_per_gram}</span>
+                        <span>{row.archived ? 'Archived' : 'Active'}</span>
+                      </div>
+                    </div>
+                    <div className="row-actions">
+                      <button type="button" className="secondary" onClick={() => startEdit(row)}>
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary"
+                        onClick={() => toggleArchive(row)}
+                      >
+                        {row.archived ? 'Unarchive' : 'Archive'}
+                      </button>
                     </div>
                   </div>
-                  <div className="row-actions">
-                    <button type="button" className="secondary" onClick={() => startEdit(row)}>
-                      Edit
-                    </button>
-                    <button type="button" className="secondary" onClick={() => toggleArchive(row)}>
-                      {row.archived ? 'Unarchive' : 'Archive'}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </article>
-        </section>
+                ))}
+              </div>
+            </article>
+          </section>
+          <RecipeManagement enabled={status === 'ready'} ingredients={ingredients} />
+        </>
       ) : null}
     </main>
   )

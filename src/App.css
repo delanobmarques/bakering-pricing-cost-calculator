@@ -153,3 +153,99 @@ button.secondary {
     grid-template-columns: 1fr;
   }
 }
+
+.recipe-section {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.recipe-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.variant-summary-list {
+  margin-top: 0.5rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.variant-summary-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+}
+
+.recipe-editor {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.recipe-header-grid,
+.variant-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.6rem;
+}
+
+.variant-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.tab {
+  background: #ffffff;
+  color: #202020;
+}
+
+.tab.active {
+  background: #202020;
+  color: #ffffff;
+}
+
+.component-section {
+  border: 1px solid #e3e3e3;
+  border-radius: 8px;
+  padding: 0.6rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.component-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.line-row {
+  border: 1px solid #ececec;
+  border-radius: 8px;
+  padding: 0.45rem;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr auto auto auto auto;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.line-cost {
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 980px) {
+  .line-row {
+    grid-template-columns: 1fr;
+  }
+
+  .recipe-list-header,
+  .component-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

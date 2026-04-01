@@ -16,4 +16,15 @@ export const recipesRepository = {
       [row.id, row.name, row.is_brigadeiro, row.notes, row.created_at, row.updated_at],
     )
   },
+
+  update(row: RecipeRow): void {
+    execute(
+      'UPDATE recipes SET name = ?, is_brigadeiro = ?, notes = ?, updated_at = ? WHERE id = ?;',
+      [row.name, row.is_brigadeiro, row.notes, row.updated_at, row.id],
+    )
+  },
+
+  deleteById(id: string): void {
+    execute('DELETE FROM recipes WHERE id = ?;', [id])
+  },
 }

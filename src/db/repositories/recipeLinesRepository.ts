@@ -27,4 +27,8 @@ export const recipeLinesRepository = {
       ],
     )
   },
+
+  deleteByVariantId(variantId: string): void {
+    execute('DELETE FROM recipe_lines WHERE variant_id = ?;', [variantId])
+  },
 }
