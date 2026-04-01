@@ -8,6 +8,22 @@ export type IngredientUsageWarning = {
   affected_recipes: number
 }
 
+export type MissingPriceUsage = {
+  ingredient_id: string
+  ingredient_name: string
+  ingredient_status: IngredientStatus
+  current_price: number | null
+  used_in_variants: number
+  used_in_recipes: number
+}
+
+export type DataQualityIssue = {
+  ingredient_id: string
+  ingredient_name: string
+  ingredient_status: IngredientStatus
+  issue_type: 'DOUBLE_CHECK' | 'UNVERIFIED'
+}
+
 type ListFilters = {
   search?: string
   status?: IngredientStatus | 'ALL'
@@ -126,6 +142,21 @@ export const ingredientsRepository = {
     ])
   },
 
+  updatePriceAndStatus(id: string, price: number, status: IngredientStatus): void {
+    execute(
+      `UPDATE ingredients
+       SET price = ?,
+           status = ?,
+           cost_per_gram = CASE
+             WHEN size_in_grams > 0 THEN ROUND(? / size_in_grams, 6)
+             ELSE cost_per_gram
+           END,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?;`,
+      [price, status, price, id],
+    )
+  },
+
   listRecipeWarningsForNonOkIngredients(): IngredientUsageWarning[] {
     return queryRows<IngredientUsageWarning>(
       `SELECT
@@ -140,6 +171,38 @@ export const ingredientsRepository = {
       WHERE i.archived = 0 AND i.status != 'OK'
       GROUP BY i.id, i.name, i.status
       ORDER BY i.name ASC;`,
+    )
+  },
+
+  listRecipeUsedMissingPrices(): MissingPriceUsage[] {
+    return queryRows<MissingPriceUsage>(
+      `SELECT
+        i.id AS ingredient_id,
+        i.name AS ingredient_name,
+        i.status AS ingredient_status,
+        i.price AS current_price,
+        COUNT(DISTINCT rv.id) AS used_in_variants,
+        COUNT(DISTINCT r.id) AS used_in_recipes
+      FROM ingredients i
+      INNER JOIN recipe_lines rl ON rl.ingredient_id = i.id
+      INNER JOIN recipe_variants rv ON rv.id = rl.variant_id
+      INNER JOIN recipes r ON r.id = rv.recipe_id
+      WHERE i.archived = 0 AND (i.status = 'MISSING_PRICE' OR i.price IS NULL)
+      GROUP BY i.id, i.name, i.status, i.price
+      ORDER BY i.name ASC;`,
+    )
+  },
+
+  listDataQualityIssues(): DataQualityIssue[] {
+    return queryRows<DataQualityIssue>(
+      `SELECT
+        id AS ingredient_id,
+        name AS ingredient_name,
+        status AS ingredient_status,
+        status AS issue_type
+      FROM ingredients
+      WHERE archived = 0 AND status IN ('DOUBLE_CHECK', 'UNVERIFIED')
+      ORDER BY name ASC;`,
     )
   },
 }

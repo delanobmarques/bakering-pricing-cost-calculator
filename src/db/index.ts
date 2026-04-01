@@ -13,6 +13,7 @@ export type {
   SettingRow,
 } from './types'
 export { ingredientsRepository } from './repositories/ingredientsRepository'
+export type { DataQualityIssue, MissingPriceUsage } from './repositories/ingredientsRepository'
 export { overheadsRepository } from './repositories/overheadsRepository'
 export { recipeLinesRepository } from './repositories/recipeLinesRepository'
 export { recipesRepository } from './repositories/recipesRepository'

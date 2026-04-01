@@ -317,6 +317,37 @@ button.secondary {
   white-space: nowrap;
 }
 
+.migration-summary {
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.migration-count-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.45rem;
+}
+
+.migration-count-grid > div {
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 0.45rem;
+  font-size: 0.88rem;
+}
+
+.migration-issues ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.88rem;
+}
+
+.migration-wizard .row-actions input {
+  min-width: 130px;
+}
+
 @media (max-width: 980px) {
   .line-row {
     grid-template-columns: 1fr;

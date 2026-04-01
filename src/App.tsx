@@ -9,6 +9,7 @@ import {
 } from './db'
 import './App.css'
 import { DashboardReporting } from './components/DashboardReporting'
+import { MigrationWorkflow } from './components/MigrationWorkflow'
 import { OverheadsLabourManagement } from './components/OverheadsLabourManagement'
 import { RecipeManagement } from './components/RecipeManagement'
 import { toDisplayString, toStoredString } from './lib/domain'
@@ -487,6 +488,7 @@ function App() {
               </div>
             </article>
           </section>
+          <MigrationWorkflow enabled={status === 'ready'} onDataChanged={loadIngredients} />
           <RecipeManagement enabled={status === 'ready'} ingredients={ingredients} />
           <OverheadsLabourManagement enabled={status === 'ready'} />
           <DashboardReporting enabled={status === 'ready'} />
